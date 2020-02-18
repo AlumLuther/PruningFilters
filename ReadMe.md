@@ -1,19 +1,21 @@
 # Pruning Filters For Efficient ConvNets
 
+实现了VGG16_bn、ResNet的搭建、训练和保存等功能，以及VGG16_bn的网络剪枝。
+
 ### 使用说明：
 
 ### Train the origin VGG16_bn model
 
 ```
---train-flag --save-path ./trained_models --epoch 150 --lr 0.1 --lr-milestone 50 100
+--train-flag --save-path ./trained_models/model.pth --epoch 300 --lr 0.1 --lr-milestone 100 200
 ```
 
-搭建VGG_16bn模型，并基于CIFAR10进行训练。
+无读取路径时默认新搭建一个VGG_16bn模型，并基于CIFAR10进行训练。
 
 ### Prune the model
 
 ```
---prune-flag --load-path ./trained_models/model.pth --save-path ./prunned_models --prune-layers conv1 conv8 conv9 conv10 conv11 conv12 conv13 --prune-channels 32 256 256 256 256 256 256
+--prune-flag --load-path ./trained_models/model.pth --save-path ./prunned_models/model.pth --prune-layers conv1 conv8 conv9 conv10 conv11 conv12 conv13 --prune-channels 32 256 256 256 256 256 256
 ```
 
 显式指出需要剪枝的卷积层和通道数，可以加入 --independent-prune-flag 以执行独立策略剪枝。以上是论文作者基于VGG16_bn给出的剪枝参数，也即第一和后六个卷积层剪掉一半的filter。
@@ -21,7 +23,7 @@
 ### Retrain the prunned model
 
 ```
---train-flag --load-path ./prunned_models/model.pth --save-path ./trained_prunned_models --epoch 20 --lr 0.001
+--train-flag --load-path ./prunned_models/model.pth --save-path ./trained_prunned_models/model.pth --epoch 20 --lr 0.001
 ```
 
 剪枝后再训练应当显式给出适当的学习率。
@@ -29,7 +31,7 @@
 ### Test the model
 
 ```
---test-flag --load-path ./trained_models/model.pth --save-path ./trained_models
+--test-flag --load-path ./trained_models/model.pth --save-path ./trained_models/model.pth
 ```
 
 在不训练的情况下直接对模型进行测试。

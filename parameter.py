@@ -17,6 +17,9 @@ def build_parser():
     parser.add_argument('--test-flag', action='store_true',
                         help='flag for testing network', default=False)
 
+    parser.add_argument('--network', type=str,
+                        help='Network for training', default='vgg')
+
     parser.add_argument('--data-set', type=str,
                         help='Data set for training network', default='CIFAR10')
 
@@ -83,8 +86,9 @@ def get_parameter():
     for key, value in vars(args).items():
         print("%s: %s" % (key, value))
 
-    if not os.path.exists(args.save_path):
-        os.makedirs(args.save_path)
-        print("Make dir: ", args.save_path)
+    save_folder = args.save_path[0:args.save_path.rindex('/')]
+    if not os.path.exists(save_folder):
+        os.makedirs(save_folder)
+        print("Make dir: ", save_folder)
 
     return args

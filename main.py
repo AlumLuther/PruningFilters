@@ -1,6 +1,7 @@
 import torch
 
-from network import MyVGG, save_network
+from resnet import *
+from vgg import MyVGG, save_vgg
 from parameter import get_parameter
 from train import train_network
 from evaluate import test_network
@@ -11,8 +12,12 @@ if __name__ == '__main__':
     args = get_parameter()
     if args.load_path:
         check_point = torch.load(args.load_path)
-        network = MyVGG(check_point['cfg'])
-        network.load_state_dict(check_point['state_dict'])
+        if args.network == 'vgg':
+            network = MyVGG(check_point['cfg'])
+            network.load_state_dict(check_point['state_dict'])
+        elif args.network == 'resnet':
+            network = resnet20()
+            network.load_state_dict(check_point['state_dict'])
 
     if args.train_flag:
         network = train_network(network, args)
@@ -21,4 +26,7 @@ if __name__ == '__main__':
     elif args.test_flag:
         network = test_network(network, args)
 
-    save_network(network, args.save_path)
+    if args.network == 'vgg':
+        save_vgg(network, args.save_path)
+    elif args.network == 'resnet':
+        save_resnet(network, args.save_path)

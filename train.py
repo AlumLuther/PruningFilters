@@ -1,6 +1,7 @@
 import torch
 
-from network import MyVGG
+from resnet import *
+from vgg import MyVGG
 from loss import LossCalculator
 from evaluate import accuracy, test_step
 from utils import AverageMeter, get_data_set
@@ -10,7 +11,10 @@ from datetime import datetime
 
 def train_network(network, args):
     if network is None:
-        network = MyVGG()
+        if args.network == 'vgg':
+            network = MyVGG()
+        elif args.network == 'resnet':
+            network = resnet20()
 
     device = torch.device("cuda" if args.gpu_flag is True else "cpu")
     network = network.to(device)
