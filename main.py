@@ -1,11 +1,12 @@
 import torch
 
 from resnet import *
+from softprune import soft_prune_network
 from vgg import MyVGG, save_vgg
 from parameter import get_parameter
 from train import train_network
 from evaluate import test_network
-from prune import prune_network
+from hardprune import hard_prune_network
 
 if __name__ == '__main__':
     network = None
@@ -21,10 +22,12 @@ if __name__ == '__main__':
 
     if args.train_flag:
         network = train_network(network, args)
-    elif args.prune_flag:
-        network = prune_network(network, args)
     elif args.test_flag:
         network = test_network(network, args)
+    elif args.hard_prune_flag:
+        network = hard_prune_network(network, args)
+    elif args.soft_prune_flag:
+        network = soft_prune_network(network, args)
 
     if args.network == 'vgg':
         save_vgg(network, args.save_path)

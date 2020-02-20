@@ -1,11 +1,11 @@
 import torch
 
 
-def prune_network(network, args):
+def hard_prune_network(network, args):
     if network is None:
         return
 
-    network = prune_step(network, args.prune_layers, args.prune_channels, args.independent_prune_flag)
+    network = hard_prune_step(network, args.prune_layers, args.prune_channels, args.independent_prune_flag)
 
     print("-*-" * 10 + "\n\t\tPrune network\n" + "-*-" * 10)
     print(network)
@@ -13,7 +13,7 @@ def prune_network(network, args):
     return network
 
 
-def prune_step(network, prune_layers, prune_channels, independent_prune_flag):
+def hard_prune_step(network, prune_layers, prune_channels, independent_prune_flag):
     count = 0       # count for indexing 'prune_channels'
     conv_count = 1  # conv count for 'indexing_prune_layers'
     dim = 0         # 0: prune corresponding dim of filter weight [out_ch, in_ch, k1, k2]

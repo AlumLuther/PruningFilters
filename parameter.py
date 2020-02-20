@@ -11,8 +11,11 @@ def build_parser():
     parser.add_argument('--train-flag', action='store_true',
                         help='flag for training network', default=False)
 
-    parser.add_argument('--prune-flag', action='store_true',
+    parser.add_argument('--hard-prune-flag', action='store_true',
                         help='flag for pruning network', default=False)
+
+    parser.add_argument('--soft-prune-flag', action='store_true',
+                        help='flag for soft pruning network', default=False)
 
     parser.add_argument('--test-flag', action='store_true',
                         help='flag for testing network', default=False)
@@ -74,6 +77,9 @@ def build_parser():
 
     parser.add_argument('--prune-channels', nargs='+', type=int,
                         help='number of channel to prune layers', default=None)
+
+    parser.add_argument('--prune-rate', type=float,
+                        help='factor for soft filter pruning', default=0.125)
 
     return parser
 
