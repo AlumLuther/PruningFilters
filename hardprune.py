@@ -2,10 +2,18 @@ import torch
 
 
 def hard_prune_network(network, args):
+    if args.network == 'vgg':
+        network = hard_prune_vgg(network, args)
+    elif args.network == 'resnet':
+        network = hard_prune_resnet(network, args)
+    return network
+
+
+def hard_prune_vgg(network, args):
     if network is None:
         return
 
-    network = hard_prune_step(network, args.prune_layers, args.prune_channels, args.independent_prune_flag)
+    network = hard_prune_vgg_step(network, args.prune_layers, args.prune_channels, args.independent_prune_flag)
 
     print("-*-" * 10 + "\n\t\tPrune network\n" + "-*-" * 10)
     print(network)
@@ -13,10 +21,10 @@ def hard_prune_network(network, args):
     return network
 
 
-def hard_prune_step(network, prune_layers, prune_channels, independent_prune_flag):
-    count = 0       # count for indexing 'prune_channels'
+def hard_prune_vgg_step(network, prune_layers, prune_channels, independent_prune_flag):
+    count = 0  # count for indexing 'prune_channels'
     conv_count = 1  # conv count for 'indexing_prune_layers'
-    dim = 0         # 0: prune corresponding dim of filter weight [out_ch, in_ch, k1, k2]
+    dim = 0  # 0: prune corresponding dim of filter weight [out_ch, in_ch, k1, k2]
     residue = None  # residue is need to prune by 'independent strategy'
 
     for i in range(len(network.features)):
@@ -43,6 +51,43 @@ def hard_prune_step(network, prune_layers, prune_channels, independent_prune_fla
         network.classifier[0] = get_new_linear(network.classifier[0], channel_index)
 
     return network
+
+
+def hard_prune_resnet(network, args):
+    if network is None:
+        return
+
+    channel_index = get_channel_index(network.conv_1_3x3.weight.data, int(round(network.conv_1_3x3.out_channels * args.prune_rate)))
+    network.conv_1_3x3 = get_new_conv(network.conv_1_3x3, 0, channel_index, args.independent_prune_flag)
+    network.bn_1 = get_new_norm(network.bn_1, channel_index)
+
+    for block in network.stage_1:
+        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate, args.independent_prune_flag)
+    for block in network.stage_2:
+        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate, args.independent_prune_flag)
+    for block in network.stage_3:
+        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate, args.independent_prune_flag)
+
+    network.classifier = get_new_linear(network.classifier, channel_index)
+
+    print("-*-" * 10 + "\n\t\tPrune network\n" + "-*-" * 10)
+    print(network)
+
+    return network
+
+
+def hard_prune_block(block, channel_index, prune_rate, independent_prune_flag):
+    block.conv_a, greedy_residue = get_new_conv(block.conv_a, 1, channel_index, independent_prune_flag)
+    channel_index = get_channel_index(block.conv_a.weight.data, int(round(block.conv_a.out_channels * prune_rate)), greedy_residue)
+    block.conv_a = get_new_conv(block.conv_a, 0, channel_index, independent_prune_flag)
+    block.bn_a = get_new_norm(block.bn_a, channel_index)
+
+    block.conv_b, greedy_residue = get_new_conv(block.conv_b, 1, channel_index, independent_prune_flag)
+    channel_index = get_channel_index(block.conv_b.weight.data, int(round(block.conv_b.out_channels * prune_rate)), greedy_residue)
+    block.conv_b = get_new_conv(block.conv_b, 0, channel_index, independent_prune_flag)
+    block.bn_b = get_new_norm(block.bn_b, channel_index)
+
+    return block, channel_index
 
 
 def get_channel_index(kernel, num_elimination, residue=None):
@@ -79,10 +124,11 @@ def get_new_conv(conv, dim, channel_index, independent_prune_flag=False):
         new_conv = torch.nn.Conv2d(in_channels=conv.in_channels,
                                    out_channels=int(conv.out_channels - len(channel_index)),
                                    kernel_size=conv.kernel_size,
-                                   stride=conv.stride, padding=conv.padding, dilation=conv.dilation)
+                                   stride=conv.stride, padding=conv.padding, dilation=conv.dilation, bias=conv.bias is not None)
 
         new_conv.weight.data = index_remove(conv.weight.data, dim, channel_index)
-        new_conv.bias.data = index_remove(conv.bias.data, dim, channel_index)
+        if conv.bias:
+            new_conv.bias.data = index_remove(conv.bias.data, dim, channel_index)
 
         return new_conv
 
@@ -90,14 +136,15 @@ def get_new_conv(conv, dim, channel_index, independent_prune_flag=False):
         new_conv = torch.nn.Conv2d(in_channels=int(conv.in_channels - len(channel_index)),
                                    out_channels=conv.out_channels,
                                    kernel_size=conv.kernel_size,
-                                   stride=conv.stride, padding=conv.padding, dilation=conv.dilation)
+                                   stride=conv.stride, padding=conv.padding, dilation=conv.dilation, bias=conv.bias is not None)
 
         new_weight = index_remove(conv.weight.data, dim, channel_index, independent_prune_flag)
         residue = None
         if independent_prune_flag:
             new_weight, residue = new_weight
         new_conv.weight.data = new_weight
-        new_conv.bias.data = conv.bias.data
+        if conv.bias:
+            new_conv.bias.data = conv.bias.data
 
         return new_conv, residue
 

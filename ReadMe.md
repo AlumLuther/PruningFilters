@@ -8,9 +8,11 @@
 
 实现了VGG16_bn的网络剪枝，算法基于两篇论文中提出的hard filter pruning(greedy/independent)和soft filter pruning。剪枝后的网络模型得以保存，支持后续读取再训练、进一步剪枝等操作。
 
+实现了ResNet的hard filter pruning。
+
 ### 有待完成：
 
-ResNet的网络剪枝。
+ResNet的soft filter pruning，以及bottleneck模块的ResNet搭建、剪枝。
 
 剪枝参数的进一步细化调整，如为soft filter pruning添加各卷积层独立的剪枝参数。
 

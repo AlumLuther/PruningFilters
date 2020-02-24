@@ -39,15 +39,3 @@ class MyVGG(torch.nn.Module):
         return output
 
 
-def get_cfg(network):
-    res = []
-    for i in range(len(network.features)):
-        if isinstance(network.features[i], torch.nn.Conv2d):
-            res.append(network.features[i].out_channels)
-        elif isinstance(network.features[i], torch.nn.MaxPool2d):
-            res.append('M')
-    return res
-
-
-def save_vgg(network, save_path):
-    torch.save({'cfg': get_cfg(network), 'state_dict': network.state_dict()}, save_path)
