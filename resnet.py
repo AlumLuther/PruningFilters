@@ -44,6 +44,8 @@ class ResNetBasicblock(nn.Module):
         if self.down_sample is not None:
             residual = self.down_sample(x)
 
+
+
         return relu(residual + basicblock, inplace=True)
 
 

@@ -21,7 +21,7 @@ def test_network(network, args):
     test_loss_str = 'Loss: %.4f. ' % test_loss
     print(test_acc_str + test_loss_str)
 
-    return network
+    return
 
 
 def test_step(network, data_loader, device):

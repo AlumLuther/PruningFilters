@@ -16,7 +16,6 @@ def hard_prune_vgg(network, args):
     network = hard_prune_vgg_step(network, args.prune_layers, args.prune_channels, args.independent_prune_flag)
 
     print("-*-" * 10 + "\n\t\tPrune network\n" + "-*-" * 10)
-    print(network)
 
     return network
 
@@ -57,36 +56,37 @@ def hard_prune_resnet(network, args):
     if network is None:
         return
 
-    channel_index = get_channel_index(network.conv_1_3x3.weight.data, int(round(network.conv_1_3x3.out_channels * args.prune_rate)))
-    network.conv_1_3x3 = get_new_conv(network.conv_1_3x3, 0, channel_index, args.independent_prune_flag)
-    network.bn_1 = get_new_norm(network.bn_1, channel_index)
+    # channel_index = get_channel_index(network.conv_1_3x3.weight.data, int(round(network.conv_1_3x3.out_channels * args.prune_rate[0])))
+    # network.conv_1_3x3 = get_new_conv(network.conv_1_3x3, 0, channel_index, args.independent_prune_flag)
+    # network.bn_1 = get_new_norm(network.bn_1, channel_index)
+
+    channel_index = []
 
     for block in network.stage_1:
-        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate, args.independent_prune_flag)
+        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate[0], args.independent_prune_flag)
     for block in network.stage_2:
-        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate, args.independent_prune_flag)
+        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate[1], args.independent_prune_flag)
     for block in network.stage_3:
-        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate, args.independent_prune_flag)
+        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate[2], args.independent_prune_flag)
 
     network.classifier = get_new_linear(network.classifier, channel_index)
 
     print("-*-" * 10 + "\n\t\tPrune network\n" + "-*-" * 10)
-    print(network)
 
     return network
 
 
 def hard_prune_block(block, channel_index, prune_rate, independent_prune_flag):
-    block.conv_a, greedy_residue = get_new_conv(block.conv_a, 1, channel_index, independent_prune_flag)
-    channel_index = get_channel_index(block.conv_a.weight.data, int(round(block.conv_a.out_channels * prune_rate)), greedy_residue)
+    # block.conv_a, greedy_residue = get_new_conv(block.conv_a, 1, channel_index, independent_prune_flag)
+    channel_index = get_channel_index(block.conv_a.weight.data, int(round(block.conv_a.out_channels * prune_rate)), residue=None)
     block.conv_a = get_new_conv(block.conv_a, 0, channel_index, independent_prune_flag)
     block.bn_a = get_new_norm(block.bn_a, channel_index)
 
     block.conv_b, greedy_residue = get_new_conv(block.conv_b, 1, channel_index, independent_prune_flag)
-    channel_index = get_channel_index(block.conv_b.weight.data, int(round(block.conv_b.out_channels * prune_rate)), greedy_residue)
-    block.conv_b = get_new_conv(block.conv_b, 0, channel_index, independent_prune_flag)
-    block.bn_b = get_new_norm(block.bn_b, channel_index)
-
+    # channel_index = get_channel_index(block.conv_b.weight.data, int(round(block.conv_b.out_channels * prune_rate)), greedy_residue)
+    # block.conv_b = get_new_conv(block.conv_b, 0, channel_index, independent_prune_flag)
+    # block.bn_b = get_new_norm(block.bn_b, channel_index)
+    channel_index = []
     return block, channel_index
 
 

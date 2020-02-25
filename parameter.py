@@ -78,8 +78,8 @@ def build_parser():
     parser.add_argument('--prune-channels', nargs='+', type=int,
                         help='number of channel to prune layers', default=None)
 
-    parser.add_argument('--prune-rate', type=float,
-                        help='factor for soft filter pruning', default=0.125)
+    parser.add_argument('--prune-rate', nargs='+', type=float,
+                        help='factor for soft filter pruning', default=[0.125, 0.125, 0.125])
 
     return parser
 

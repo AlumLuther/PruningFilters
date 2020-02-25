@@ -16,8 +16,9 @@ if __name__ == '__main__':
         network = test_network(network, args)
     elif args.hard_prune_flag:
         network = hard_prune_network(network, args)
+        test_network(network, args)
     elif args.soft_prune_flag:
         network = soft_prune_network(network, args)
 
     print(network)
-    save_network(network, args.save_path)
+    save_network(network, args)

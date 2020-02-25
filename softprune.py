@@ -27,7 +27,7 @@ def soft_prune_vgg(network, args):
     for i in range(len(network.features)):
         if isinstance(network.features[i], torch.nn.Conv2d):
             layers.append('conv' + str(num))
-            channels.append(int(round(network.features[i].out_channels * args.prune_rate)))
+            channels.append(int(round(network.features[i].out_channels * args.prune_rate[0])))
             num += 1
 
     network = soft_train(network, args)
@@ -52,7 +52,7 @@ def soft_train(network, args):
     for epoch in range(0, args.epoch):
         network = network.cpu()
         if args.network is "vgg":
-            network = soft_prune_vgg_step(network, args.prune_rate)
+            network = soft_prune_vgg_step(network, args.prune_rate[0])
         elif args.network == 'resnet':
             network = soft_prune_resnet_step(network, args.prune_rate)
         network = network.to(device)
