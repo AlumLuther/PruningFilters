@@ -24,11 +24,13 @@ def soft_prune_vgg(network, args):
     channels = []
     num = 1
 
-    for i in range(len(network.features)):
-        if isinstance(network.features[i], torch.nn.Conv2d):
-            layers.append('conv' + str(num))
-            channels.append(int(round(network.features[i].out_channels * args.prune_rate[0])))
-            num += 1
+    # for i in range(len(network.features)):
+    #     if isinstance(network.features[i], torch.nn.Conv2d):
+    #         layers.append('conv' + str(num))
+    #         channels.append(int(round(network.features[i].out_channels * args.prune_rate[0])))
+    #         num += 1
+    layers = ['conv1', 'conv8', 'conv9', 'conv10', 'conv11', 'conv12', 'conv13']
+    channels = [32, 256, 256, 256, 256, 256, 256]
 
     network = soft_train(network, args)
     network = hard_prune_vgg_step(network, layers, channels, args.independent_prune_flag)
@@ -65,7 +67,7 @@ def soft_train(network, args):
 
 def soft_prune_vgg_step(network, prune_rate):
     for i in range(len(network.features)):
-        if isinstance(network.features[i], torch.nn.Conv2d):
+        if isinstance(network.features[i], torch.nn.Conv2d) and (i == 0 or network.features[i].out_channels == 512):
             kernel = network.features[i].weight.data
             sum_of_kernel = torch.sum(torch.abs(kernel.view(kernel.size(0), -1)), dim=1)
             _, args = torch.sort(sum_of_kernel)

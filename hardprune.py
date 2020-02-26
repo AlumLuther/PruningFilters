@@ -6,6 +6,7 @@ def hard_prune_network(network, args):
         network = hard_prune_vgg(network, args)
     elif args.network == 'resnet':
         network = hard_prune_resnet(network, args)
+        # network = hard_prune_resnet_2(network, args)
     return network
 
 
@@ -60,16 +61,14 @@ def hard_prune_resnet(network, args):
     # network.conv_1_3x3 = get_new_conv(network.conv_1_3x3, 0, channel_index, args.independent_prune_flag)
     # network.bn_1 = get_new_norm(network.bn_1, channel_index)
 
-    channel_index = []
-
     for block in network.stage_1:
-        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate[0], args.independent_prune_flag)
+        block, _ = hard_prune_block(block, [], args.prune_rate[0], args.independent_prune_flag)
     for block in network.stage_2:
-        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate[1], args.independent_prune_flag)
+        block, _ = hard_prune_block(block, [], args.prune_rate[1], args.independent_prune_flag)
     for block in network.stage_3:
-        block, channel_index = hard_prune_block(block, channel_index, args.prune_rate[2], args.independent_prune_flag)
+        block, _ = hard_prune_block(block, [], args.prune_rate[2], args.independent_prune_flag)
 
-    network.classifier = get_new_linear(network.classifier, channel_index)
+    # network.classifier = get_new_linear(network.classifier, channel_index)
 
     print("-*-" * 10 + "\n\t\tPrune network\n" + "-*-" * 10)
 
@@ -86,7 +85,43 @@ def hard_prune_block(block, channel_index, prune_rate, independent_prune_flag):
     # channel_index = get_channel_index(block.conv_b.weight.data, int(round(block.conv_b.out_channels * prune_rate)), greedy_residue)
     # block.conv_b = get_new_conv(block.conv_b, 0, channel_index, independent_prune_flag)
     # block.bn_b = get_new_norm(block.bn_b, channel_index)
-    channel_index = []
+
+    return block, []
+
+
+def hard_prune_resnet_2(network, args):
+    if network is None:
+        return
+
+    channel_index = get_channel_index(network.conv_1_3x3.weight.data, int(round(network.conv_1_3x3.out_channels * args.prune_rate[0])))
+    network.conv_1_3x3 = get_new_conv(network.conv_1_3x3, 0, channel_index, args.independent_prune_flag)
+    network.bn_1 = get_new_norm(network.bn_1, channel_index)
+
+    for block in network.stage_1:
+        block, channel_index = hard_prune_block_2(block, channel_index, args.prune_rate[0], args.independent_prune_flag)
+    for block in network.stage_2:
+        block, channel_index = hard_prune_block_2(block, channel_index, args.prune_rate[1], args.independent_prune_flag)
+    for block in network.stage_3:
+        block, channel_index = hard_prune_block_2(block, channel_index, args.prune_rate[2], args.independent_prune_flag)
+
+    network.classifier = get_new_linear(network.classifier, channel_index)
+
+    print("-*-" * 10 + "\n\t\tPrune network\n" + "-*-" * 10)
+
+    return network
+
+
+def hard_prune_block_2(block, channel_index, prune_rate, independent_prune_flag):
+    block.conv_a, greedy_residue = get_new_conv(block.conv_a, 1, channel_index, independent_prune_flag)
+    channel_index = get_channel_index(block.conv_a.weight.data, int(round(block.conv_a.out_channels * prune_rate)), greedy_residue)
+    block.conv_a = get_new_conv(block.conv_a, 0, channel_index, independent_prune_flag)
+    block.bn_a = get_new_norm(block.bn_a, channel_index)
+
+    block.conv_b, greedy_residue = get_new_conv(block.conv_b, 1, channel_index, independent_prune_flag)
+    channel_index = get_channel_index(block.conv_b.weight.data, int(round(block.conv_b.out_channels * prune_rate)), greedy_residue)
+    block.conv_b = get_new_conv(block.conv_b, 0, channel_index, independent_prune_flag)
+    block.bn_b = get_new_norm(block.bn_b, channel_index)
+
     return block, channel_index
 
 
@@ -127,7 +162,7 @@ def get_new_conv(conv, dim, channel_index, independent_prune_flag=False):
                                    stride=conv.stride, padding=conv.padding, dilation=conv.dilation, bias=conv.bias is not None)
 
         new_conv.weight.data = index_remove(conv.weight.data, dim, channel_index)
-        if conv.bias:
+        if conv.bias is not None:
             new_conv.bias.data = index_remove(conv.bias.data, dim, channel_index)
 
         return new_conv
@@ -143,7 +178,7 @@ def get_new_conv(conv, dim, channel_index, independent_prune_flag=False):
         if independent_prune_flag:
             new_weight, residue = new_weight
         new_conv.weight.data = new_weight
-        if conv.bias:
+        if conv.bias is not None:
             new_conv.bias.data = conv.bias.data
 
         return new_conv, residue

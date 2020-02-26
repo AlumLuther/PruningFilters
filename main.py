@@ -12,13 +12,12 @@ if __name__ == '__main__':
 
     if args.train_flag:
         network = train_network(network, args)
-    elif args.test_flag:
-        network = test_network(network, args)
     elif args.hard_prune_flag:
         network = hard_prune_network(network, args)
-        test_network(network, args)
     elif args.soft_prune_flag:
         network = soft_prune_network(network, args)
 
     print(network)
+    test_network(network, args)
+    network = train_network(network, args)
     save_network(network, args)
